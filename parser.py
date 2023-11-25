@@ -1,17 +1,27 @@
+# parser.py
 import requests
 from bs4 import BeautifulSoup
 
-def get_latest_news(urls):
-    news = []
+NEWS_URL = "ВАШ_URL_ДЛЯ_ПАРСИНГА_НОВОСТЕЙ"
 
-    for url in urls:
-        try:
-            response = requests.get(url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            # Ваш код для извлечения новостей из HTML-кода
-            # news.append(...)
+def parse_news():
+    try:
+        response = requests.get(NEWS_URL)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
+            # Добавьте код для извлечения данных из HTML-страницы
+            # Например, найдите все заголовки новостей и ссылки
+            headlines = soup.find_all("h2", class_="news-headline")
+            links = [a["href"] for a in soup.find_all("a", class_="news-link")]
 
-        except Exception as e:
-            print(f"Ошибка при обработке URL {url}: {e}")
+            # Вернем первые 5 новостей
+            return list(zip(headlines[:5], links[:5]))
+    except Exception as e:
+        print(f"Error during parsing: {e}")
+    return None
 
-    return news
+# Пример использования:
+# news_data = parse_news()
+# if news_data:
+#     for headline, link in news_data:
+#         print(f"Заголовок: {headline}\nСсылка: {link}\n")
