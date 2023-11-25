@@ -1,4 +1,3 @@
-# bot.py
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
@@ -6,19 +5,15 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 import logging
 import os
-import requests
-from bs4 import BeautifulSoup
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 
-from config import NEWS_URLS,bot_token
+STORAGE_PATH = "storage"  # Путь к папке с файлами
 
 logging.basicConfig(level=logging.INFO)
 
-STORAGE_PATH = "storage"
-
-bot = Bot(token=bot_token)
+bot = Bot(token="YOUR_BOT_TOKEN")
 dp = Dispatcher(bot)
 
 BUTTON_RUSSIAN = "button1"
@@ -26,11 +21,9 @@ BUTTON_ENGLISH = "button2"
 BUTTON_MENU = "menu"
 BUTTON_TEMPLATES = "button3"
 BUTTON_COURSES = "button4"
-BUTTON_NEWS = "button5"
 
 TEXT_SET_LANGUAGE = "Set the language:"
 TEXT_CHOSE_RUSSIAN = "Выберите язык:"
-TEXT_SEARCHING_NEWS = "Идет поиск свежих новостей."
 TEXT_IN_PROGRESS = "In progress."
 
 def get_inline_keyboard_to_start():
@@ -50,8 +43,7 @@ def get_inline_keyboard_to_main():
     keyboard_main = InlineKeyboardMarkup(row_width=2)
     button3 = InlineKeyboardButton(text="Шаблоны", callback_data=BUTTON_TEMPLATES)
     button4 = InlineKeyboardButton(text="Курсы", callback_data=BUTTON_COURSES)
-    button5 = InlineKeyboardButton(text="Новости", callback_data=BUTTON_NEWS)
-    keyboard_main.add(button3, button4, button5)
+    keyboard_main.add(button3, button4)
     return keyboard_main
 
 @dp.message_handler(Command("start"))
@@ -70,14 +62,14 @@ async def send_file(chat_id, file_path, caption):
     with open(file_path, "rb") as file:
         await bot.send_document(chat_id, file, caption=caption)
 
-@dp.callback_query_handler(lambda c: c.data in [BUTTON_RUSSIAN, BUTTON_ENGLISH, BUTTON_MENU, BUTTON_TEMPLATES, BUTTON_COURSES, BUTTON_NEWS, "template1", "template2", "course1", "course2"])
+@dp.callback_query_handler(lambda c: c.data in [BUTTON_RUSSIAN, BUTTON_ENGLISH, BUTTON_MENU, BUTTON_TEMPLATES, BUTTON_COURSES, "template1", "template2", "course1", "course2"])
 async def process_callback_button(callback_query: types.CallbackQuery):
     logging.info(f"Received callback query: {callback_query}")
     await bot.answer_callback_query(callback_query.id)
     button_data = callback_query.data
 
     if button_data == BUTTON_RUSSIAN:
-        buttons = [("Шаблоны", BUTTON_TEMPLATES), ("Курсы", BUTTON_COURSES), ("Новости", BUTTON_NEWS)]
+        buttons = [("Шаблоны", BUTTON_TEMPLATES), ("Курсы", BUTTON_COURSES)]
         await send_keyboard_message(callback_query.from_user.id, TEXT_CHOSE_RUSSIAN, buttons)
     elif button_data == BUTTON_ENGLISH:
         buttons = [("Menu", BUTTON_MENU)]
@@ -98,9 +90,6 @@ async def process_callback_button(callback_query: types.CallbackQuery):
             ("Курс 2", "course2")
         ]
         await send_keyboard_message(callback_query.from_user.id, "Выберите курс:", course_buttons)
-    elif button_data == BUTTON_NEWS:
-        logging.info("Pressed News button")
-        await send_news(callback_query.from_user.id)
     elif button_data == "template1":
         logging.info("Pressed Template 1 button")
         file_path = os.path.join(STORAGE_PATH, "template1.zip")
